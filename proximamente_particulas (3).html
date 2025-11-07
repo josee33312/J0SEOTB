@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>COMING SOON</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;600;800&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#000000;
+      --text:#ffffff;
+      --accent: #6ee7b7;
+    }
+    html,body{height:100%;margin:0}
+    body{
+      background:var(--bg);
+      color:var(--text);
+      font-family: 'Poppins', system-ui, -apple-system, 'Segoe UI', Roboto, "Helvetica Neue", Arial;
+      overflow:hidden;
+    }
+
+    canvas#particles{
+      position:fixed;
+      inset:0;
+      width:100%;
+      height:100%;
+      display:block;
+      z-index:0;
+    }
+
+    .center {
+      position:relative;
+      z-index:2;
+      height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      pointer-events:none;
+      text-align:center;
+      flex-direction:column;
+    }
+
+    h1{
+      margin:0;
+      font-weight:800;
+      letter-spacing:0.35rem;
+      text-transform:uppercase;
+      font-size:clamp(36px, 10vw, 140px);
+      line-height:0.9;
+      color:transparent;
+      -webkit-text-stroke: 1.5px rgba(255,255,255,0.95);
+      text-shadow: 0 8px 40px rgba(110,231,183,0.06), 0 2px 6px rgba(0,0,0,0.6);
+      position: relative;
+      background: linear-gradient(90deg, #6ee7b7, #ffffff, #6ee7b7);
+      background-size: 200% auto;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: shine 3s linear infinite;
+    }
+
+    @keyframes shine {
+      0% {
+        background-position: 200% center;
+      }
+      100% {
+        background-position: -200% center;
+      }
+    }
+
+    .controls{
+      position:fixed;
+      right:12px;
+      top:12px;
+      z-index:3;
+      background:rgba(255,255,255,0.03);
+      border:1px solid rgba(255,255,255,0.04);
+      color:var(--text);
+      padding:8px 10px;
+      border-radius:10px;
+      backdrop-filter: blur(6px);
+      font-size:13px;
+      display:flex;
+      gap:8px;
+      align-items:center;
+    }
+    .controls input[type=range]{
+      width:120px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      canvas#particles { filter: none; }
+      h1 { animation: none; }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="particles"></canvas>
+
+  <div class="center">
+    <h1>COMING SOON</h1>
+  </div>
+
+  <div class="controls" aria-hidden="true">
+    <label style="font-size:12px">Particles</label>
+    <input id="density" type="range" min="100" max="2000" value="800">
+  </div>
+
+  <script>
+    (function(){
+      const canvas = document.getElementById('particles');
+      const ctx = canvas.getContext('2d');
+      let width = canvas.width = innerWidth;
+      let height = canvas.height = innerHeight;
+
+      const DPR = Math.max(1, window.devicePixelRatio || 1);
+      canvas.width = Math.floor(width * DPR);
+      canvas.height = Math.floor(height * DPR);
+      canvas.style.width = width + 'px';
+      canvas.style.height = height + 'px';
+      ctx.scale(DPR, DPR);
+
+      let mouse = { x: width/2, y: height/2, down:false };
+
+      window.addEventListener('resize', onResize);
+      window.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; });
+      window.addEventListener('mousedown', () => mouse.down = true);
+      window.addEventListener('mouseup', () => mouse.down = false);
+
+      const densityInput = document.getElementById('density');
+
+      function random(min=0,max=1){ return Math.random()*(max-min)+min }
+
+      class Particle{
+        constructor(){
+          this.reset(true);
+        }
+        reset(init=false){
+          this.x = random(0, width);
+          this.y = random(0, height);
+          const speed = random(0.05, 0.8);
+          const angle = random(0, Math.PI*2);
+          this.vx = Math.cos(angle) * speed;
+          this.vy = Math.sin(angle) * speed;
+          this.size = random(0.6, 2.8);
+          this.alpha = random(0.05, 0.9);
+          this.twinkle = Math.random() > 0.985 ? random(0.7,1) : 0;
+          this.colorHue = Math.floor(random(150,180));
+          if(!init && (this.x< -50 || this.x > width+50 || this.y < -50 || this.y>height+50)) this.reset(true);
+        }
+        update(dt){
+          const dx = this.x - mouse.x;
+          const dy = this.y - mouse.y;
+          const dist2 = dx*dx + dy*dy + 0.0001;
+          const force = Math.min(120000/dist2, 0.9);
+
+          if(mouse.down){
+            this.vx += (dx/dist2) * 80 * Math.random() * force;
+            this.vy += (dy/dist2) * 80 * Math.random() * force;
+          } else {
+            this.vx += (-dx/dist2) * 8 * force * 0.04;
+            this.vy += (-dy/dist2) * 8 * force * 0.04;
+          }
+
+          this.vx *= 0.995;
+          this.vy *= 0.995;
+
+          this.x += this.vx * dt;
+          this.y += this.vy * dt;
+
+          if(this.x < -60 || this.x > width+60 || this.y < -60 || this.y > height+60){
+            if(this.x < -60) this.x = width + 60;
+            if(this.x > width+60) this.x = -60;
+            if(this.y < -60) this.y = height + 60;
+            if(this.y > height+60) this.y = -60;
+          }
+
+          if(this.twinkle){
+            this.alpha = 0.5 + 0.5 * Math.sin(Date.now() * 0.004 + this.size*30);
+          }
+        }
+        draw(ctx){
+          ctx.beginPath();
+          ctx.globalAlpha = this.alpha * 0.9;
+          const g = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.size*6);
+          g.addColorStop(0, `hsla(${this.colorHue}, 90%, 70%, ${0.95*this.alpha})`);
+          g.addColorStop(0.4, `hsla(${this.colorHue}, 90%, 50%, ${0.35*this.alpha})`);
+          g.addColorStop(1, `hsla(${this.colorHue}, 90%, 40%, 0)`);
+          ctx.fillStyle = g;
+          ctx.arc(this.x, this.y, this.size*3.5, 0, Math.PI*2);
+          ctx.fill();
+          ctx.globalAlpha = 1;
+        }
+      }
+
+      let particles = [];
+      let last = performance.now();
+      let particleCount = parseInt(densityInput.value, 10) || 800;
+
+      function initParticles(){
+        particles = new Array(particleCount).fill(null).map(()=> new Particle());
+      }
+
+      densityInput.addEventListener('input', () => {
+        particleCount = parseInt(densityInput.value,10);
+        initParticles();
+      });
+
+      function onResize(){
+        width = canvas.width = innerWidth;
+        height = canvas.height = innerHeight;
+        canvas.width = Math.floor(width * DPR);
+        canvas.height = Math.floor(height * DPR);
+        canvas.style.width = width + 'px';
+        canvas.style.height = height + 'px';
+        ctx.setTransform(1,0,0,1,0,0);
+        ctx.scale(DPR, DPR);
+        initParticles();
+      }
+
+      function loop(now){
+        const dt = Math.min(60, now - last) / 16.6667;
+        last = now;
+        ctx.clearRect(0,0,width,height);
+        for(let i=0;i<particles.length;i++){
+          particles[i].update(dt);
+        }
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        for(let i=0;i<particles.length;i++){
+          const p = particles[i];
+          p.draw(ctx);
+        }
+        ctx.beginPath();
+        for(let i=0;i<particles.length;i++){
+          const a = particles[i];
+          for(let j=i+1;j<particles.length && j < i+8;j++){
+            const b = particles[j];
+            const dx = a.x-b.x; const dy = a.y-b.y;
+            const d2 = dx*dx + dy*dy;
+            if(d2 < 9000){
+              const alpha = (1 - d2/9000) * 0.08;
+              ctx.moveTo(a.x, a.y);
+              ctx.lineTo(b.x, b.y);
+              ctx.strokeStyle = `hsla(170,80%,65%,${alpha})`;
+              ctx.lineWidth = 0.8;
+              ctx.stroke();
+            }
+          }
+        }
+        ctx.restore();
+        requestAnimationFrame(loop);
+      }
+
+      initParticles();
+      requestAnimationFrame(loop);
+
+    })();
+  </script>
+</body>
+</html>
